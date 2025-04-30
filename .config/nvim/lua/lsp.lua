@@ -49,6 +49,18 @@ local opts = {
 
 require("rust-tools").setup(opts)
 
+require('lspconfig').clangd.setup{
+  cmd = { 'clangd', '--clang-tidy', '--background-index', '--offset-encoding=utf-8' },
+  filetypes = { 'c', 'cpp', 'h', 'hpp' },
+  root_dir = require('lspconfig.util').root_pattern('compile_commands.json', '.git'),
+  settings = {
+    clangd = {
+      compilationDatabasePath = 'build',
+      fallbackFlags = { '-std=c11' , '-Wall'},
+    },
+  },
+}
+
 -- Setup Completion
 -- See https://github.com/hrsh7th/nvim-cmp#basic-configuration
 local cmp = require("cmp")
