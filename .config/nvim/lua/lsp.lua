@@ -7,49 +7,10 @@ vim.o.completeopt = "menuone,noinsert,noselect"
 -- Avoid showing extra messages when using completion
 vim.opt.shortmess = vim.opt.shortmess + "c"
 
-local function on_attach(client, buffer)
-  -- This callback is called when the LSP is atttached/enabled for this buffer
-  -- we could set keymaps related to LSP, etc here.
-end
+local lspconfig = require('lspconfig')
 
--- Configure LSP through rust-tools.nvim plugin.
--- rust-tools will configure and enable certain LSP features for us.
--- See https://github.com/simrat39/rust-tools.nvim#configuration
-local opts = {
-  tools = {
-    runnables = {
-      use_telescope = true,
-    },
-    inlay_hints = {
-      auto = true,
-      show_parameter_hints = false,
-      parameter_hints_prefix = "",
-      other_hints_prefix = "",
-    },
-  },
-
-  -- all the opts to send to nvim-lspconfig
-  -- these override the defaults set by rust-tools.nvim
-  -- see https://github.com/neovim/nvim-lspconfig/blob/master/CONFIG.md#rust_analyzer
-  server = {
-    -- on_attach is a callback called when the language server attachs to the buffer
-    on_attach = on_attach,
-    settings = {
-      -- to enable rust-analyzer settings visit:
-      -- https://github.com/rust-analyzer/rust-analyzer/blob/master/docs/user/generated_config.adoc
-      ["rust-analyzer"] = {
-        -- enable clippy on save
-        checkOnSave = {
-          command = "clippy",
-        },
-      },
-    },
-  },
-}
-
-require("rust-tools").setup(opts)
-
-require('lspconfig').clangd.setup{
+-- calngd setup for c, cpp files
+lspconfig.clangd.setup{
   cmd = { 'clangd', '--clang-tidy', '--background-index', '--offset-encoding=utf-8' },
   filetypes = { 'c', 'cpp', 'h', 'hpp' },
   root_dir = require('lspconfig.util').root_pattern('compile_commands.json', '.git'),
@@ -60,6 +21,35 @@ require('lspconfig').clangd.setup{
     },
   },
 }
+
+-- built-in rust-analyzer setup
+lspconfig.rust_analyzer.setup({
+  settings = {
+    ['rust-analyzer'] = {
+      cargo = {
+        allFeatures = true,
+      },
+      checkOnSave = {
+        command = 'clippy',
+      },
+      inlayHints = {
+        enable = true,
+        typeHints = true,
+        parameterHints = true,
+        chainingHints = true,
+      },
+    },
+  },
+})
+
+vim.diagnostic.config({
+    underline = false,
+    virtual_text = true,
+    signs = true,
+    update_in_insert = false,
+})
+
+vim.lsp.inlay_hint.enable(true)
 
 -- Setup Completion
 -- See https://github.com/hrsh7th/nvim-cmp#basic-configuration
@@ -95,10 +85,4 @@ cmp.setup({
     { name = "buffer" },
   },
 })
-
-vim.lsp.handlers["textDocument/publishDiagnostics"] =
-    vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
-        -- Disable underline, it's very annoying
-        underline = false,
-    })
 

@@ -13,7 +13,6 @@ local packer_bootstrap = ensure_packer()
 
 return require('packer').startup(function(use)
   use 'wbthomason/packer.nvim'
-  use 'mjlbach/onedark.nvim'
   use 'nvim-lualine/lualine.nvim'
   use 'junegunn/fzf'
   use 'junegunn/fzf.vim'
@@ -42,7 +41,6 @@ return require('packer').startup(function(use)
           require('fidget').setup()
       end
   })
-  use 'simrat39/rust-tools.nvim'
 
   if packer_bootstrap then
     require('packer').sync()
