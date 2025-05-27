@@ -37,6 +37,17 @@ lspconfig.rust_analyzer.setup({
         typeHints = true,
         parameterHints = true,
         chainingHints = true,
+        bindingModeHints = true,
+        closureReturnTypeHints = {
+          enable = "always",
+        },
+        lifetimeElisionHints = {
+          enable = "always",
+          useParameterNames = true,
+        },
+        reborrowHints = {
+          enable = "always",
+        },
       },
     },
   },
@@ -49,7 +60,7 @@ vim.diagnostic.config({
     update_in_insert = false,
 })
 
-vim.lsp.inlay_hint.enable(true)
+-- vim.lsp.inlay_hint.enable(true)
 
 -- Setup Completion
 -- See https://github.com/hrsh7th/nvim-cmp#basic-configuration

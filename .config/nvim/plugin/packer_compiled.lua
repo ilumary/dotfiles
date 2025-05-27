@@ -115,16 +115,6 @@ _G.packer_plugins = {
     path = "/Users/christophbritsch/.local/share/nvim/site/pack/packer/start/fzf.vim",
     url = "https://github.com/junegunn/fzf.vim"
   },
-  gruvbox = {
-    loaded = true,
-    path = "/Users/christophbritsch/.local/share/nvim/site/pack/packer/start/gruvbox",
-    url = "https://github.com/morhetz/gruvbox"
-  },
-  ["gruvbox-material"] = {
-    loaded = true,
-    path = "/Users/christophbritsch/.local/share/nvim/site/pack/packer/start/gruvbox-material",
-    url = "https://github.com/sainnhe/gruvbox-material"
-  },
   ["lsp_signature.nvim"] = {
     loaded = true,
     path = "/Users/christophbritsch/.local/share/nvim/site/pack/packer/start/lsp_signature.nvim",
