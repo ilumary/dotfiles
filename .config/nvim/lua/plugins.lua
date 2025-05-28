@@ -28,12 +28,12 @@ return require('packer').startup(function(use)
   use 'hrsh7th/nvim-cmp'
   use 'hrsh7th/vim-vsnip'
   use 'zefei/vim-colortuner'
-  -- use 'morhetz/gruvbox'
+  use 'ellisonleao/gruvbox.nvim'
   use 'nvim-treesitter/nvim-treesitter'
   use 'theHamsta/nvim-semantic-tokens'
   use 'tikhomirov/vim-glsl'
   use 'ajmwagar/vim-deus'
-  use {'lifepillar/vim-gruvbox8', branch='neovim'}
+  use {'lifepillar/vim-gruvbox8', commit = '4b56d56e287b74758edb4504e23be2d4977d0972'}
   use ({
       'j-hui/fidget.nvim',
       config = function()
