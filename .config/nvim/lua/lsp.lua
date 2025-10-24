@@ -7,60 +7,95 @@ vim.o.completeopt = "menuone,noinsert,noselect"
 -- Avoid showing extra messages when using completion
 vim.opt.shortmess = vim.opt.shortmess + "c"
 
-local lspconfig = require('lspconfig')
+-- Diagnostics
+local config = {
+    virtual_text = true,
+    update_in_insert = true,
+    underline = false,
+    severity_sort = true,
+    float = {
+        focusable = false,
+        style  = "minimal",
+        border = "single",
+        source = "always",
+        header = "",
+        prefix = "",
+        suffix = "",
+    },
+}
+vim.diagnostic.config(config)
 
--- calngd setup for c, cpp files
-lspconfig.clangd.setup{
-  cmd = { 'clangd', '--clang-tidy', '--background-index', '--offset-encoding=utf-8' },
-  filetypes = { 'c', 'cpp', 'h', 'hpp' },
-  root_dir = require('lspconfig.util').root_pattern('compile_commands.json', '.git'),
+-- C++/C
+vim.lsp.config.clangd = {
+  cmd = {
+    "clangd",
+    "-j=" .. 2,
+    "--background-index",
+    "--clang-tidy",
+    "--inlay-hints",
+    "--fallback-style=llvm",
+    "--all-scopes-completion",
+    "--completion-style=detailed",
+    "--header-insertion=iwyu",
+    "--header-insertion-decorators",
+  },
+  filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+  root_markers = {
+    "CMakeLists.txt",
+    ".clangd",
+    ".clang-tidy",
+    ".clang-format",
+    "compile_commands.json",
+    "compile_flags.txt",
+    "configure.ac",
+    ".git",
+    vim.uv.cwd(),
+  },
+}
+vim.lsp.enable("clangd")
+
+-- Rust
+vim.lsp.config.rust_analyzer = {
+  filetypes = { "rust" },
+  cmd = { "rust-analyzer" },
+  workspace_required = true,
+  root_dir = function(buf, cb)
+    local root = vim.fs.root(buf, { "Cargo.toml", "rust-project.json" })
+    local out = vim.system({ "cargo", "metadata", "--no-deps", "--format-version", "1" }, { cwd = root }):wait()
+    if out.code ~= 0 then
+      return cb(root)
+    end
+
+    local ok, result = pcall(vim.json.decode, out.stdout)
+    if ok and result.workspace_root then
+      return cb(result.workspace_root)
+    end
+
+    return cb(root)
+  end,
   settings = {
-    clangd = {
-      compilationDatabasePath = 'build',
-      fallbackFlags = { '-std=c11' , '-Wall'},
+    autoformat = false,
+    ["rust-analyzer"] = {
+      check = {
+        command = "clippy",
+      },
     },
   },
 }
+vim.lsp.enable("rust_analyzer")
 
--- built-in rust-analyzer setup
-lspconfig.rust_analyzer.setup({
+-- Bash
+vim.lsp.config.bashls = {
+  cmd = { "bash-language-server", "start" },
+  filetypes = { "bash", "sh", "zsh" },
+  root_markers = { ".git", vim.uv.cwd() },
   settings = {
-    ['rust-analyzer'] = {
-      cargo = {
-        allFeatures = true,
-      },
-      checkOnSave = {
-        command = 'clippy',
-      },
-      inlayHints = {
-        enable = true,
-        typeHints = true,
-        parameterHints = true,
-        chainingHints = true,
-        bindingModeHints = true,
-        closureReturnTypeHints = {
-          enable = "always",
-        },
-        lifetimeElisionHints = {
-          enable = "always",
-          useParameterNames = true,
-        },
-        reborrowHints = {
-          enable = "always",
-        },
-      },
+    bashIde = {
+      globPattern = vim.env.GLOB_PATTERN or "*@(.sh|.inc|.bash|.command)",
     },
   },
-})
-
-vim.diagnostic.config({
-    underline = false,
-    virtual_text = true,
-    signs = true,
-    update_in_insert = false,
-})
-
--- vim.lsp.inlay_hint.enable(true)
+}
+vim.lsp.enable("bashls")
 
 -- Setup Completion
 -- See https://github.com/hrsh7th/nvim-cmp#basic-configuration

@@ -19,7 +19,6 @@ return require('packer').startup(function(use)
   use 'windwp/nvim-autopairs'
   use 'rust-lang/rust.vim'
   use 'neovim/nvim-lspconfig'
-  use 'ray-x/lsp_signature.nvim'
   use 'hrsh7th/cmp-nvim-lsp'
   use 'hrsh7th/cmp-buffer'
   use 'hrsh7th/cmp-path'
