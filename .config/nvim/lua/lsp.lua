@@ -1,134 +1,89 @@
--- Set completeopt to have a better completion experience
--- menuone: popup even when there's only one match
--- noinsert: Do not insert text until a selection is made
--- noselect: Do not auto-select, nvim-cmp plugin will handle this for us.
-vim.o.completeopt = "menuone,noinsert,noselect"
+-- ~/.config/nvim/lua/lsp.lua
 
--- Avoid showing extra messages when using completion
-vim.opt.shortmess = vim.opt.shortmess + "c"
+-- ============================================================
+-- Diagnostics display
+-- ============================================================
+vim.diagnostic.config({
+  virtual_text     = true,
+  update_in_insert = true,
+  underline        = false,
+  severity_sort    = true,
+  float = {
+    focusable = false,
+    style     = "minimal",
+    border    = "single",
+    source    = "always",
+  },
+})
 
--- Diagnostics
-local config = {
-    virtual_text = true,
-    update_in_insert = true,
-    underline = false,
-    severity_sort = true,
-    float = {
-        focusable = false,
-        style  = "minimal",
-        border = "single",
-        source = "always",
-        header = "",
-        prefix = "",
-        suffix = "",
-    },
-}
-vim.diagnostic.config(config)
+-- ============================================================
+-- Keymaps applied whenever an LSP attaches to a buffer
+-- ============================================================
+vim.api.nvim_create_autocmd("LspAttach", {
+  callback = function(args)
+    local buf = args.buf
+    local map = function(mode, lhs, rhs, desc)
+      vim.keymap.set(mode, lhs, rhs, { buffer = buf, silent = true, desc = desc })
+    end
 
--- C++/C
+    map("n", "gd",        vim.lsp.buf.definition,     "Go to definition")
+    map("n", "gD",        vim.lsp.buf.declaration,    "Go to declaration")
+    map("n", "gr",        vim.lsp.buf.references,     "List references")
+    map("n", "gi",        vim.lsp.buf.implementation, "Go to implementation")
+    map("n", "K",         vim.lsp.buf.hover,          "Hover docs")
+    map("n", "<leader>r", vim.lsp.buf.rename,         "Rename symbol")
+    map("n", "<leader>a", vim.lsp.buf.code_action,    "Code action")
+    map("n", "<leader>f", function()
+      vim.lsp.buf.format({ async = true })
+    end, "Format file")
+    map("n", "[d", vim.diagnostic.goto_prev,  "Previous diagnostic")
+    map("n", "]d", vim.diagnostic.goto_next,  "Next diagnostic")
+    map("n", "<leader>e", vim.diagnostic.open_float, "Show diagnostic")
+  end,
+})
+
+-- ============================================================
+-- C / C++
+-- ============================================================
 vim.lsp.config.clangd = {
   cmd = {
     "clangd",
-    "-j=" .. 2,
     "--background-index",
     "--clang-tidy",
-    "--inlay-hints",
-    "--fallback-style=llvm",
     "--all-scopes-completion",
     "--completion-style=detailed",
     "--header-insertion=iwyu",
-    "--header-insertion-decorators",
   },
-  filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+  filetypes    = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
   root_markers = {
-    "CMakeLists.txt",
-    ".clangd",
-    ".clang-tidy",
-    ".clang-format",
-    "compile_commands.json",
-    "compile_flags.txt",
-    "configure.ac",
-    ".git",
-    vim.uv.cwd(),
+    "CMakeLists.txt", ".clangd", ".clang-tidy", ".clang-format",
+    "compile_commands.json", "compile_flags.txt", ".git",
   },
 }
 vim.lsp.enable("clangd")
 
+-- ============================================================
 -- Rust
+-- ============================================================
 vim.lsp.config.rust_analyzer = {
+  cmd       = { "rust-analyzer" },
   filetypes = { "rust" },
-  cmd = { "rust-analyzer" },
-  workspace_required = true,
-  root_dir = function(buf, cb)
-    local root = vim.fs.root(buf, { "Cargo.toml", "rust-project.json" })
-    local out = vim.system({ "cargo", "metadata", "--no-deps", "--format-version", "1" }, { cwd = root }):wait()
-    if out.code ~= 0 then
-      return cb(root)
-    end
-
-    local ok, result = pcall(vim.json.decode, out.stdout)
-    if ok and result.workspace_root then
-      return cb(result.workspace_root)
-    end
-
-    return cb(root)
-  end,
+  root_markers = { "Cargo.toml", "rust-project.json" },
   settings = {
-    autoformat = false,
     ["rust-analyzer"] = {
-      check = {
-        command = "clippy",
-      },
+      check = { command = "clippy" },
     },
   },
 }
 vim.lsp.enable("rust_analyzer")
 
+-- ============================================================
 -- Bash
+-- ============================================================
 vim.lsp.config.bashls = {
-  cmd = { "bash-language-server", "start" },
-  filetypes = { "bash", "sh", "zsh" },
-  root_markers = { ".git", vim.uv.cwd() },
-  settings = {
-    bashIde = {
-      globPattern = vim.env.GLOB_PATTERN or "*@(.sh|.inc|.bash|.command)",
-    },
-  },
+  cmd       = { "bash-language-server", "start" },
+  filetypes = { "sh", "bash", "zsh" },
+  root_markers = { ".git" },
 }
 vim.lsp.enable("bashls")
-
--- Setup Completion
--- See https://github.com/hrsh7th/nvim-cmp#basic-configuration
-local cmp = require("cmp")
-cmp.setup({
-  preselect = cmp.PreselectMode.None,
-  snippet = {
-    expand = function(args)
-      vim.fn["vsnip#anonymous"](args.body)
-    end,
-  },
-  mapping = {
-    ["<C-p>"] = cmp.mapping.select_prev_item(),
-    ["<C-n>"] = cmp.mapping.select_next_item(),
-    -- Add tab support
-    ["<S-Tab>"] = cmp.mapping.select_prev_item(),
-    ["<Tab>"] = cmp.mapping.select_next_item(),
-    ["<C-d>"] = cmp.mapping.scroll_docs(-4),
-    ["<C-f>"] = cmp.mapping.scroll_docs(4),
-    ["<C-Space>"] = cmp.mapping.complete(),
-    ["<C-e>"] = cmp.mapping.close(),
-    ["<CR>"] = cmp.mapping.confirm({
-      behavior = cmp.ConfirmBehavior.Insert,
-      select = true,
-    }),
-  },
-
-  -- Installed sources
-  sources = {
-    { name = "nvim_lsp" },
-    { name = "vsnip" },
-    { name = "path" },
-    { name = "buffer" },
-  },
-})
 
